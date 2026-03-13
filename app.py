@@ -2,44 +2,39 @@ import streamlit as st
 import google.generativeai as genai
 
 # 1. 웹사이트 기본 설정
-st.set_page_config(page_title="탐구비서", page_icon="🚀", layout="wide")
+st.set_page_config(page_title="탐구비서", page_icon="🧪", layout="wide")
 
-# UI 정리: 요청하신 대로 깔끔하게 제목만!
-st.title("🚀 탐구비서")
+# UI 정리: 가족 전용 느낌 물씬 나게!
+st.title("🧪 태연이네 가족 비밀 탐구소")
 st.markdown("---")
 
-# 2. 사이드바 설정 (API 키 입력 및 자동 모델 연결)
+# 2. 사이드바 설정 (비밀 창고에서 열쇠 자동 가져오기)
 if 'model' not in st.session_state:
     st.session_state.model = None
 
 with st.sidebar:
-    st.header("🔑 AI 열쇠 꽂기")
-    api_key = st.text_input("구글 API 키를 입력하세요.", type="password")
-    if api_key:
-        try:
-            genai.configure(api_key=api_key)
-            # 사용 가능한 모델 자동 탐색
-            models = [m for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-            best_model = next((m for m in models if 'flash' in m.name), models[0])
-            model_id = best_model.name
-            
-            # [🔥 에러 해결!] 구글이 시킨 대로 'google_search'라는 이름을 정확히 사용합니다.
-            try:
-                st.session_state.model = genai.GenerativeModel(
-                    model_name=model_id,
-                    tools=[{"google_search": {}}] 
-                )
-                st.success("연결 성공! 🧠 엔진 가동 중")
-            except:
-                # 만약 또 툴 에러가 나면 모델만이라도 연결해서 작동하게 함
-                st.session_state.model = genai.GenerativeModel(model_name=model_id)
-                st.warning("일반 AI 모드로 연결되었습니다.")
-        except Exception as e:
-            st.error(f"연결 오류: {e}")
-    else:
-        st.warning("👈 사이드바에 API 키를 넣어주세요.")
+    st.header("🔑 AI 엔진 상태")
+    try:
+        # 스트림릿 비밀 창고(Secrets)에서 열쇠를 가져와!
+        api_key = st.secrets["GOOGLE_API_KEY"]
+        genai.configure(api_key=api_key)
+        
+        # 사용 가능한 최신 모델 자동 탐색
+        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        target_model = next((m for m in models if 'flash' in m), models[0])
+        
+        # 구글 검색 도구 탑재 (2026 표준 방식)
+        st.session_state.model = genai.GenerativeModel(
+            model_name=target_model,
+            tools=[{"google_search": {}}]
+        )
+        st.success("가족 전용 열쇠로 자동 연결됐어! ✅")
+        st.info(f"현재 엔진: {target_model}")
+    except Exception as e:
+        st.error("비밀 창고에 열쇠가 없어! 스트림릿 설정을 확인해줘.")
+        st.write(f"에러 내용: {e}")
 
-# 3. 5단계 탭 구성 (대표님 요청 이름으로 변경!)
+# 3. 5단계 탭 구성
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "🔍 1. 자료조사", 
     "📰 2. 뉴스 검색 및 요약", 
@@ -58,7 +53,7 @@ with tab1:
                 response = st.session_state.model.generate_content(f"'{topic}'에 대한 최신 이슈와 주요 개념을 3가지로 정리해줘.")
                 st.info(f"### 🔍 자료조사 결과\n\n{response.text}")
         else:
-            st.error("주제를 입력하고 API 키를 확인해주세요.")
+            st.error("주제를 입력해주세요!")
 
 # --- Step 2. 뉴스 검색 및 요약 ---
 with tab2:
@@ -71,7 +66,7 @@ with tab2:
                 st.session_state.news_text = response.text
                 st.success("기사를 성공적으로 가져왔습니다.")
         else:
-            st.error("주제를 먼저 입력해주세요.")
+            st.error("주제를 먼저 입력해주세요!")
 
     current_text = st.session_state.get('news_text', "")
     long_text = st.text_area("가져온 기사 전문", value=current_text, height=250)
@@ -91,7 +86,7 @@ with tab3:
                 response = st.session_state.model.generate_content(f"'{topic}' 주제에 맞는 중학생 수준 탐구 가설 3가지를 추천해줘.")
                 st.info(f"### 💡 추천 가설\n\n{response.text}")
 
-# --- Step 4. 탐구보고서 개요 (이름 변경!) ---
+# --- Step 4. 탐구보고서 개요 ---
 with tab4:
     st.header("📄 Step 4. 탐구보고서 개요")
     if st.button("탐구보고서 개요 생성", key="btn4"):
@@ -101,7 +96,7 @@ with tab4:
                 response = st.session_state.model.generate_content(prompt)
                 st.info(f"### 📄 보고서 개요\n\n{response.text}")
 
-# --- Step 5. 탐구보고서 완성 (이름 변경 및 출처 포함!) ---
+# --- Step 5. 탐구보고서 완성 ---
 with tab5:
     st.header("✨ Step 5. 탐구보고서 완성")
     if st.button("최종 서술형 보고서 완성", key="btn5"):
