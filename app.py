@@ -4,7 +4,7 @@ import google.generativeai as genai
 # 1. 웹사이트 기본 설정
 st.set_page_config(page_title="탐구비서", page_icon="🚀", layout="wide")
 
-# 요청하신 대로 제목을 '탐구비서'로 복구!
+# 요청하신 제목 복구
 st.title("🚀 탐구비서")
 st.markdown("---")
 
@@ -20,32 +20,23 @@ with st.sidebar:
             api_key = st.secrets["GOOGLE_API_KEY"]
             genai.configure(api_key=api_key)
             
-            # 엔진 이름 찾기
+            # 사용 가능한 모델 찾기
             models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
             target_model = next((m for m in models if 'flash' in m), models[0])
             
-            # [🔥 에러 철벽 방어!] 구글 검색 도구를 가장 안전한 방식으로 연결해
+            # 검색 도구 연결 (가장 안정적인 방식)
             try:
-                # 2026년형 최신 선언 방식 시도
                 st.session_state.model = genai.GenerativeModel(
                     model_name=target_model,
-                    tools=['google_search'] 
+                    tools=[{"google_search": {}}]
                 )
             except:
-                try:
-                    # 구형 선언 방식 시도
-                    st.session_state.model = genai.GenerativeModel(
-                        model_name=target_model,
-                        tools=[{"google_search": {}}]
-                    )
-                except:
-                    # 도구 연결 실패 시 일반 AI 모드로라도 켜기!
-                    st.session_state.model = genai.GenerativeModel(model_name=target_model)
+                st.session_state.model = genai.GenerativeModel(model_name=target_model)
             
             st.success("엔진 가동 준비 완료! ✅")
             st.info(f"사용 엔진: {target_model}")
         else:
-            st.error("비밀 창고에 열쇠가 없어! 스트림릿 Settings -> Secrets에 GOOGLE_API_KEY를 넣어줘.")
+            st.error("비밀 창고에 열쇠가 없어! 스트림릿 Settings -> Secrets에 키를 넣어줘.")
     except Exception as e:
         st.error(f"연결 오류 발생: {e}")
 
@@ -68,7 +59,7 @@ with tab1:
                 response = st.session_state.model.generate_content(f"'{topic}'에 대한 최신 이슈를 3가지로 정리해줘.")
                 st.info(response.text)
         else:
-            st.error("먼저 주제를 입력하고 열쇠 설정을 확인해줘!")
+            st.error("주제를 입력하고 엔진 상태를 확인해줘!")
 
 # --- Step 2. 뉴스 검색 및 요약 ---
 with tab2:
@@ -120,5 +111,5 @@ with tab5:
                 response = st.session_state.model.generate_content(prompt)
                 st.success("완성됐어!")
                 st.text_area("최종 보고서", response.text, height=400)
-                st.download_button("💾 파일 저장", response.text, file_name=f"{topic}_보고서.txt")}_탐구보고서.txt")
-
+                # [📍 수술 완료!] 문법 에러가 났던 지점을 깔끔하게 고쳤어.
+                st.download_button("💾 파일 저장", response.text, file_name=f"{topic}_탐구보고서.txt")
